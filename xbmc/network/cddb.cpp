@@ -1,6 +1,6 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
- *      http://www.xbmc.org
+ *      Copyright (C) 2005-2013 Team XBMC
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -209,7 +209,7 @@ bool Xcddb::queryCDinfo(CCdInfo* pInfo, int inexact_list_select)
     return false;
   }
 
-  unsigned long discid = pInfo->GetCddbDiscId();
+  uint32_t discid = pInfo->GetCddbDiscId();
 
 
   //##########################################################
@@ -354,7 +354,7 @@ int Xcddb::cddb_sum(int n)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-unsigned long Xcddb::calc_disc_id(int tot_trks, toc cdtoc[])
+uint32_t Xcddb::calc_disc_id(int tot_trks, toc cdtoc[])
 {
   int i = 0, t = 0, n = 0;
 
@@ -499,12 +499,12 @@ void Xcddb::parseData(const char *buffer)
       if (s != NULL)
       {
         CStdString strKeyword(line, s - line);
-        strKeyword.TrimRight(" ");
+        StringUtils::TrimRight(strKeyword);
 
         CStdString strValue(s+1);
-        strValue.Replace("\\n", "\n"); 
-        strValue.Replace("\\t", "\t"); 
-        strValue.Replace("\\\\", "\\"); 
+        StringUtils::Replace(strValue, "\\n", "\n");
+        StringUtils::Replace(strValue, "\\t", "\t");
+        StringUtils::Replace(strValue, "\\\\", "\\");
 
         std::map<CStdString, CStdString>::const_iterator it = keywords.find(strKeyword);
         if (it != keywords.end())
@@ -523,17 +523,18 @@ void Xcddb::parseData(const char *buffer)
     CStdString strKeyword = *it;
     CStdString strValue = keywords[strKeyword];
 
+    /* TODO:STRING_CLEANUP */
     if (strKeyword == "DTITLE")
     {
       // DTITLE may contain artist and disc title, separated with " / ",
       // for example: DTITLE=Modern Talking / Album: Victory (The 11th Album)
       bool found = false;
-      for (int i = 0; i < strValue.GetLength() - 2; i++)
+      for (int i = 0; i < (int)strValue.size() - 2; i++)
       {
         if (strValue[i] == ' ' && strValue[i + 1] == '/' && strValue[i + 2] == ' ')
         {
-          m_strDisk_artist = TrimToUTF8(strValue.Left(i));
-          m_strDisk_title = TrimToUTF8(strValue.Mid(i+3));
+          m_strDisk_artist = TrimToUTF8(strValue.substr(0, i));
+          m_strDisk_title = TrimToUTF8(strValue.substr(i+3));
           found = true;
           break;
         }
@@ -546,30 +547,30 @@ void Xcddb::parseData(const char *buffer)
       m_strYear = TrimToUTF8(strValue);
     else if (strKeyword== "DGENRE")
       m_strGenre = TrimToUTF8(strValue);
-    else if (strKeyword.Left(6) == "TTITLE")
+    else if (StringUtils::StartsWith(strKeyword, "TTITLE"))
       addTitle(strKeyword + "=" + strValue);
     else if (strKeyword == "EXTD")
     {
       CStdString strExtd(strValue);
 
-      if (m_strYear.IsEmpty())
+      if (m_strYear.empty())
       {
         // Extract Year from extended info
         // as a fallback
-        int iPos = strExtd.Find("YEAR:");
-        if (iPos > -1) // You never know if you really get UTF-8 strings from cddb
-          g_charsetConverter.unknownToUTF8(strExtd.Mid(iPos + 6, 4), m_strYear);
+        size_t iPos = strExtd.find("YEAR: ");
+        if (iPos != std::string::npos) // You never know if you really get UTF-8 strings from cddb
+          g_charsetConverter.unknownToUTF8(strExtd.substr(iPos + 6, 4), m_strYear);
       }
 
-      if (m_strGenre.IsEmpty())
+      if (m_strGenre.empty())
       {
         // Extract ID3 Genre
         // as a fallback
-        int iPos = strExtd.Find("ID3G:");
-        if (iPos > -1)
+        size_t iPos = strExtd.find("ID3G: ");
+        if (iPos != std::string::npos)
         {
-          CStdString strGenre = strExtd.Mid(iPos + 5, 4);
-          strGenre.TrimLeft(' ');
+          CStdString strGenre = strExtd.substr(iPos + 5, 4);
+          StringUtils::TrimLeft(strGenre);
           if (StringUtils::IsNaturalNumber(strGenre))
           {
             int iGenre = strtol(strGenre, NULL, 10);
@@ -578,7 +579,7 @@ void Xcddb::parseData(const char *buffer)
         }
       }
     }
-    else if (strKeyword.Left(4) == "EXTT")
+    else if (StringUtils::StartsWith(strKeyword, "EXTT"))
       addExtended(strKeyword + "=" + strValue);
   }
 
@@ -749,7 +750,7 @@ void Xcddb::setCacheDir(const CStdString& pCacheDir )
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-bool Xcddb::queryCache( unsigned long discid )
+bool Xcddb::queryCache( uint32_t discid )
 {
   if (cCacheDir.size() == 0)
     return false;
@@ -770,7 +771,7 @@ bool Xcddb::queryCache( unsigned long discid )
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-bool Xcddb::writeCacheFile( const char* pBuffer, unsigned long discid )
+bool Xcddb::writeCacheFile( const char* pBuffer, uint32_t discid )
 {
   if (cCacheDir.size() == 0)
     return false;
@@ -820,7 +821,7 @@ bool Xcddb::queryCDinfo(CCdInfo* pInfo)
 
   int lead_out = pInfo->GetTrackCount();
   int real_track_count = pInfo->GetTrackCount();
-  unsigned long discid = pInfo->GetCddbDiscId();
+  uint32_t discid = pInfo->GetCddbDiscId();
   unsigned long frames[100];
 
 
@@ -828,7 +829,7 @@ bool Xcddb::queryCDinfo(CCdInfo* pInfo)
   //
   if ( queryCache(discid) )
   {
-    CLog::Log(LOGDEBUG, "Xcddb::queryCDinfo discid [%08lx] already cached", discid);
+    CLog::Log(LOGDEBUG, "Xcddb::queryCDinfo discid [%08x] already cached", discid);
     return true;
   }
 
@@ -874,7 +875,10 @@ bool Xcddb::queryCDinfo(CCdInfo* pInfo)
 
   //##########################################################
   // Send the Hello message
-  CStdString strGreeting = "cddb hello xbmc xbmc XBMC/"+g_infoManager.GetLabel(SYSTEM_BUILD_VERSION);
+  CStdString version = g_infoManager.GetLabel(SYSTEM_BUILD_VERSION);
+  if (version.find(" ") != std::string::npos)
+    version = version.substr(0, version.find(" "));
+  CStdString strGreeting = "cddb hello xbmc xbmc.org XBMC " + version;
   if ( ! Send(strGreeting.c_str()) )
   {
     CLog::Log(LOGERROR, "Xcddb::queryCDinfo Error sending \"%s\"", strGreeting.c_str());
@@ -927,7 +931,7 @@ bool Xcddb::queryCDinfo(CCdInfo* pInfo)
   strcat(query_buffer, "cddb query");
   {
     char tmp_buffer[256];
-    sprintf(tmp_buffer, " %08lx", discid);
+    sprintf(tmp_buffer, " %08x", discid);
     strcat(query_buffer, tmp_buffer);
   }
   {
@@ -964,7 +968,7 @@ bool Xcddb::queryCDinfo(CCdInfo* pInfo)
   {
   case 200: //Found exact match
     strtok((char *)recv_buffer.c_str(), " ");
-    read_buffer.Format("cddb read %s %08x", strtok(NULL, " "), discid);
+    read_buffer = StringUtils::Format("cddb read %s %08x", strtok(NULL, " "), discid);
     break;
 
   case 210: //Found exact matches, list follows (until terminating marker)
@@ -1065,17 +1069,17 @@ bool Xcddb::isCDCached( CCdInfo* pInfo )
   return XFILE::CFile::Exists(GetCacheFile(pInfo->GetCddbDiscId()));
 }
 
-CStdString Xcddb::GetCacheFile(unsigned int disc_id) const
+CStdString Xcddb::GetCacheFile(uint32_t disc_id) const
 {
   CStdString strFileName;
-  strFileName.Format("%x.cddb", disc_id);
+  strFileName = StringUtils::Format("%x.cddb", disc_id);
   return URIUtils::AddFileToFolder(cCacheDir, strFileName);
 }
 
 CStdString Xcddb::TrimToUTF8(const CStdString &untrimmedText)
 {
   CStdString text(untrimmedText);
-  text.Trim();
+  StringUtils::Trim(text);
   // You never know if you really get UTF-8 strings from cddb
   g_charsetConverter.unknownToUTF8(text);
   return text;

@@ -1,8 +1,8 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
- *      http://www.xbmc.org
+ *      Copyright (C) 2005-2013 Team XBMC
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
  *
  */
 
+#include "utils/StdString.h"
 #include "utils/Archive.h"
 
 /*! \brief TIME_FORMAT enum/bitmask used for formatting time strings
@@ -27,18 +28,20 @@
   TIME_FORMAT_HH_MM_SS = TIME_FORMAT_HH | TIME_FORMAT_MM | TIME_FORMAT_SS
  \sa StringUtils::SecondsToTimeString
  */
-enum TIME_FORMAT { TIME_FORMAT_GUESS     =  0,
-                   TIME_FORMAT_SS        =  1,
-                   TIME_FORMAT_MM        =  2,
-                   TIME_FORMAT_MM_SS     =  3,
-                   TIME_FORMAT_HH        =  4,
-                   TIME_FORMAT_HH_SS     =  5, // not particularly useful
-                   TIME_FORMAT_HH_MM     =  6,
-                   TIME_FORMAT_HH_MM_SS  =  7,
-                   TIME_FORMAT_XX        =  8, // AM/PM
-                   TIME_FORMAT_HH_MM_XX  = 14,
-                   TIME_FORMAT_H         = 16,
-                   TIME_FORMAT_H_MM_SS   = 19};
+enum TIME_FORMAT { TIME_FORMAT_GUESS       =  0,
+                   TIME_FORMAT_SS          =  1,
+                   TIME_FORMAT_MM          =  2,
+                   TIME_FORMAT_MM_SS       =  3,
+                   TIME_FORMAT_HH          =  4,
+                   TIME_FORMAT_HH_SS       =  5, // not particularly useful
+                   TIME_FORMAT_HH_MM       =  6,
+                   TIME_FORMAT_HH_MM_SS    =  7,
+                   TIME_FORMAT_XX          =  8, // AM/PM
+                   TIME_FORMAT_HH_MM_XX    = 14,
+                   TIME_FORMAT_HH_MM_SS_XX = 15,
+                   TIME_FORMAT_H           = 16,
+                   TIME_FORMAT_H_MM_SS     = 19,
+                   TIME_FORMAT_H_MM_SS_XX  = 27};
 
 class CDateTime;
 
@@ -70,6 +73,7 @@ public:
   int GetHours() const;
   int GetMinutes() const;
   int GetSeconds() const;
+  int GetSecondsTotal() const;
 
 private:
   void ToULargeInt(ULARGE_INTEGER& time) const;
@@ -94,7 +98,7 @@ public:
   CDateTime(int year, int month, int day, int hour, int minute, int second);
   virtual ~CDateTime() {}
 
-  void SetFromDateString(const CStdString &date);
+  bool SetFromDateString(const CStdString &date);
 
   static CDateTime GetCurrentDateTime();
   static CDateTime GetUTCDateTime();
@@ -163,20 +167,20 @@ public:
   int GetDayOfWeek() const;
   int GetMinuteOfDay() const;
 
-  void SetDateTime(int year, int month, int day, int hour, int minute, int second);
-  void SetDate(int year, int month, int day);
-  void SetTime(int hour, int minute, int second);
-  void SetFromDBDate(const CStdString &date);
-  void SetFromDBTime(const CStdString &time);
-  void SetFromW3CDate(const CStdString &date);
-  void SetFromUTCDateTime(const CDateTime &dateTime);
-  void SetFromUTCDateTime(const time_t &dateTime);
-  void SetFromRFC1123DateTime(const CStdString &dateTime);
+  bool SetDateTime(int year, int month, int day, int hour, int minute, int second);
+  bool SetDate(int year, int month, int day);
+  bool SetTime(int hour, int minute, int second);
+  bool SetFromDBDate(const CStdString &date);
+  bool SetFromDBTime(const CStdString &time);
+  bool SetFromW3CDate(const CStdString &date);
+  bool SetFromUTCDateTime(const CDateTime &dateTime);
+  bool SetFromUTCDateTime(const time_t &dateTime);
+  bool SetFromRFC1123DateTime(const CStdString &dateTime);
 
   /*! \brief set from a database datetime format YYYY-MM-DD HH:MM:SS
    \sa GetAsDBDateTime()
    */
-  void SetFromDBDateTime(const CStdString &dateTime);
+  bool SetFromDBDateTime(const CStdString &dateTime);
 
   void GetAsSystemTime(SYSTEMTIME& time) const;
   void GetAsTime(time_t& time) const;

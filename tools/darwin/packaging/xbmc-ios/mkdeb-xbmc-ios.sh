@@ -23,7 +23,7 @@ fi
 #copy bzip2 of dsym to xbmc-depends install dir
 if [ -d $DSYM ]; then
   if [ -d $DSYM_TARGET_DIR ]; then
-    tar -C $DSYM/.. -c $DSYM_FILENAME/ | bzip2 > $DSYM_TARGET_DIR/`$DIRNAME/../../../buildbot/gitrev-posix`-${DSYM_FILENAME}.tar.bz2
+    tar -C $DSYM/.. -c $DSYM_FILENAME/ | bzip2 > $DSYM_TARGET_DIR/`$DIRNAME/../gitrev-posix`-${DSYM_FILENAME}.tar.bz2
   fi
 fi
 
@@ -37,16 +37,16 @@ if [ -f "/usr/libexec/fauxsu/libfauxsu.dylib" ]; then
 elif [ -f "/usr/bin/sudo" ]; then
   SUDO="/usr/bin/sudo"
 fi
-if [ -f "/Users/Shared/xbmc-depends/toolchain/bin/dpkg-deb" ]; then
+if [ -f "/Users/Shared/xbmc-depends/buildtools-native/bin/dpkg-deb" ]; then
   # make sure we pickup our tar, gnutar will fail when dpkg -i
-  bin_path=$(cd /Users/Shared/xbmc-depends/toolchain/bin; pwd)
+  bin_path=$(cd /Users/Shared/xbmc-depends/buildtools-native/bin; pwd)
   export PATH=${bin_path}:${PATH}
 fi
 
 PACKAGE=org.xbmc.xbmc-ios
 
-VERSION=12.0
-REVISION=0~rc3
+VERSION=13.0
+REVISION=0~alpha12
 ARCHIVE=${PACKAGE}_${VERSION}-${REVISION}_iphoneos-arm.deb
 
 echo Creating $PACKAGE package version $VERSION revision $REVISION
@@ -58,7 +58,7 @@ mkdir -p $DIRNAME/$PACKAGE/DEBIAN
 echo "Package: $PACKAGE"                          >  $DIRNAME/$PACKAGE/DEBIAN/control
 echo "Priority: Extra"                            >> $DIRNAME/$PACKAGE/DEBIAN/control
 echo "Name: XBMC-iOS"                             >> $DIRNAME/$PACKAGE/DEBIAN/control
-echo "Depends: firmware (>= 4.1), curl, org.xbmc.xbmc-iconpack" >> $DIRNAME/$PACKAGE/DEBIAN/control
+echo "Depends: firmware (>= 4.1), curl"           >> $DIRNAME/$PACKAGE/DEBIAN/control
 echo "Version: $VERSION-$REVISION"                >> $DIRNAME/$PACKAGE/DEBIAN/control
 echo "Architecture: iphoneos-arm"                 >> $DIRNAME/$PACKAGE/DEBIAN/control
 echo "Description: XBMC Multimedia Center for 4.x iOS" >> $DIRNAME/$PACKAGE/DEBIAN/control

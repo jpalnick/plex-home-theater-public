@@ -1,6 +1,6 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
- *      http://www.xbmc.org
+ *      Copyright (C) 2005-2013 Team XBMC
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 #include "GUIToggleButtonControl.h"
 #include "GUIWindowManager.h"
 #include "GUIDialog.h"
-#include "utils/CharsetConverter.h"
 #include "GUIInfoManager.h"
+#include "Key.h"
 
 using namespace std;
 
@@ -30,7 +30,6 @@ CGUIToggleButtonControl::CGUIToggleButtonControl(int parentID, int controlID, fl
     : CGUIButtonControl(parentID, controlID, posX, posY, width, height, textureFocus, textureNoFocus, labelInfo)
     , m_selectButton(parentID, controlID, posX, posY, width, height, altTextureFocus, altTextureNoFocus, labelInfo)
 {
-  m_toggleSelect = 0;
   ControlType = GUICONTROL_TOGGLEBUTTON;
 }
 
@@ -43,7 +42,7 @@ void CGUIToggleButtonControl::Process(unsigned int currentTime, CDirtyRegionList
   // ask our infoManager whether we are selected or not...
   bool selected = m_bSelected;
   if (m_toggleSelect)
-    selected = g_infoManager.GetBoolValue(m_toggleSelect);
+    selected = m_toggleSelect->Get();
   if (selected != m_bSelected)
   {
     MarkDirtyRegion();

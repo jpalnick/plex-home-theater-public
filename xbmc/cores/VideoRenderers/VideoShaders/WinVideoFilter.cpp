@@ -1,6 +1,6 @@
 /*
- *      Copyright (C) 2007-2012 Team XBMC
- *      http://www.xbmc.org
+ *      Copyright (C) 2007-2013 Team XBMC
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,7 +32,11 @@
 
 CYUV2RGBMatrix::CYUV2RGBMatrix()
 {
-  m_NeedRecalc = true;
+  m_NeedRecalc  = true;
+  m_blacklevel  = 0.0f;
+  m_contrast    = 0.0f;
+  m_flags       = 0;
+  m_format      = RENDER_FMT_NONE;
 }
 
 void CYUV2RGBMatrix::SetParameters(float contrast, float blacklevel, unsigned int flags, ERenderFormat format)
@@ -77,7 +81,7 @@ D3DXMATRIX* CYUV2RGBMatrix::Matrix()
     m_mat._31 = matrix.m[0][2];
     m_mat._32 = matrix.m[1][2];
     m_mat._33 = matrix.m[2][2];
-    m_mat._44 = 0.0f;
+    m_mat._34 = 0.0f;
     m_mat._41 = matrix.m[0][3];
     m_mat._42 = matrix.m[1][3];
     m_mat._43 = matrix.m[2][3];
@@ -159,7 +163,7 @@ bool CWinShader::Execute(std::vector<LPDIRECT3DSURFACE9> *vecRT, unsigned int ve
 
   LPDIRECT3DSURFACE9 oldRT = 0;
   // The render target will be overriden: save the caller's original RT
-  if (vecRT != NULL && vecRT->size() > 0)
+  if (vecRT != NULL && !vecRT->empty())
     pD3DDevice->GetRenderTarget(0, &oldRT);
 
   pD3DDevice->SetFVF(m_FVF);
@@ -199,6 +203,10 @@ bool CWinShader::Execute(std::vector<LPDIRECT3DSURFACE9> *vecRT, unsigned int ve
     oldRT->Release();
   }
 
+  // MSDN says: Setting a new render target will cause the viewport 
+  // to be set to the full size of the new render target.
+  // So we need restore our viewport
+  g_Windowing.RestoreViewPort();
   return true;
 }
 
@@ -765,6 +773,10 @@ bool CConvolutionShaderSeparable::ClearIntermediateRenderTarget()
   currentRT->Release();
   intermediateRT->Release();
 
+  // MSDN says: Setting a new render target will cause the viewport 
+  // to be set to the full size of the new render target.
+  // So we need restore our viewport
+  g_Windowing.RestoreViewPort();
   return true;
 }
 

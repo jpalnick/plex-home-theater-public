@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!-- Mappings for the Motorola Nyxboard remote -->
 <keymap>
   <global>
@@ -10,6 +11,7 @@
       <f6 mod="shift">ActivateWindow(programs)</f6> <!-- Blue -->
       <key id='61952'>ActivateWindow(shutdownmenu)</key> <!-- Power button -->
       <key id='285'>ContextMenu</key>                    <!-- User button -->
+      <f4>ContextMenu</f4>                          <!-- User button -->
     </keyboard>
   </global>
 </keymap>

@@ -1,6 +1,6 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
- *      http://www.xbmc.org
+ *      Copyright (C) 2005-2013 Team XBMC
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 #include "input/XBMC_keyboard.h"
 #include "input/XBMC_vkeys.h"
 #include "threads/SingleLock.h"
-#include "utils/CharsetConverter.h"
 
 using namespace JSONRPC;
 
@@ -65,14 +64,7 @@ JSONRPC_STATUS CInputOperations::activateWindow(int windowID)
 
 JSONRPC_STATUS CInputOperations::SendText(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
 {
-  CGUIWindow *window = g_windowManager.GetWindow(g_windowManager.GetFocusedWindow());
-  if (!window)
-    return InternalError;
-
-  CGUIMessage msg(GUI_MSG_SET_TEXT, 0, 0);
-  msg.SetLabel(parameterObject["text"].asString());
-  msg.SetParam1(parameterObject["done"].asBoolean() ? 1 : 0);
-  CApplicationMessenger::Get().SendGUIMessage(msg, window->GetID());
+  CApplicationMessenger::Get().SendText(parameterObject["text"].asString(), parameterObject["done"].asBoolean());
   return ACK;
 }
 

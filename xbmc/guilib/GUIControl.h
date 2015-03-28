@@ -8,8 +8,8 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
- *      http://www.xbmc.org
+ *      Copyright (C) 2005-2013 Team XBMC
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -56,14 +56,16 @@ public:
  \brief Results of OnMouseEvent()
  Any value not equal to EVENT_RESULT_UNHANDLED indicates that the event was handled.
  */
-enum EVENT_RESULT { EVENT_RESULT_UNHANDLED = 0,
-                    EVENT_RESULT_HANDLED,
-                    EVENT_RESULT_PAN_HORIZONTAL,
-                    EVENT_RESULT_PAN_VERTICAL,
-                    EVENT_RESULT_PAN_VERTICAL_WITHOUT_INERTIA,
-                    EVENT_RESULT_PAN_HORIZONTAL_WITHOUT_INERTIA,                    
-                    EVENT_RESULT_ROTATE,
-                    EVENT_RESULT_ZOOM };
+enum EVENT_RESULT { EVENT_RESULT_UNHANDLED                      = 0x00,
+                    EVENT_RESULT_HANDLED                        = 0x01,
+                    EVENT_RESULT_PAN_HORIZONTAL                 = 0x02,
+                    EVENT_RESULT_PAN_VERTICAL                   = 0x04,
+                    EVENT_RESULT_PAN_VERTICAL_WITHOUT_INERTIA   = 0x08,
+                    EVENT_RESULT_PAN_HORIZONTAL_WITHOUT_INERTIA = 0x10,
+                    EVENT_RESULT_ROTATE                         = 0x20,
+                    EVENT_RESULT_ZOOM                           = 0x40,
+                    EVENT_RESULT_SWIPE                          = 0x80
+};
 
 /*!
  \ingroup controls
@@ -80,9 +82,10 @@ public:
   virtual void DoProcess(unsigned int currentTime, CDirtyRegionList &dirtyregions);
   virtual void Process(unsigned int currentTime, CDirtyRegionList &dirtyregions);
   virtual void DoRender();
-  virtual void Render();
+  virtual void Render() {};
 
-  bool HasRendered() const { return m_hasRendered; };
+  /*! \brief Returns whether or not we have processed */
+  bool HasProcessed() const { return m_hasProcessed; };
 
   // OnAction() is called by our window when we are the focused control.
   // We should process any control-specific actions in the derived classes,
@@ -201,13 +204,13 @@ public:
   bool GetNavigationAction(int direction, CGUIAction& action) const;
   /*! \brief  Start navigating in given direction.
    */
-  bool Navigate(int direction);
+  bool Navigate(int direction) const;
   virtual void SetFocus(bool focus);
   virtual void SetWidth(float width);
   virtual void SetHeight(float height);
   virtual void SetVisible(bool bVisible, bool setVisState = false);
   void SetVisibleCondition(const CStdString &expression, const CStdString &allowHiddenFocus = "");
-  unsigned int GetVisibleCondition() const { return m_visibleCondition; };
+  bool HasVisibleCondition() const { return m_visibleCondition; };
   void SetEnableCondition(const CStdString &expression);
   virtual void UpdateVisibility(const CGUIListItem *item = NULL);
   virtual void SetInitialVisibility();
@@ -308,7 +311,7 @@ protected:
   virtual bool Animate(unsigned int currentTime);
   virtual bool CheckAnimation(ANIMATION_TYPE animType);
   void UpdateStates(ANIMATION_TYPE type, ANIMATION_PROCESS currentProcess, ANIMATION_STATE currentState);
-  bool SendWindowMessage(CGUIMessage &message);
+  bool SendWindowMessage(CGUIMessage &message) const;
 
   // navigation and actions
   CGUIAction m_actionLeft;
@@ -336,14 +339,14 @@ protected:
   CGUIControl *m_parentControl;   // our parent control if we're part of a group
 
   // visibility condition/state
-  unsigned int m_visibleCondition;
+  INFO::InfoPtr m_visibleCondition;
   GUIVISIBLE m_visible;
   bool m_visibleFromSkinCondition;
   bool m_forceHidden;       // set from the code when a hidden operation is given - overrides m_visible
   CGUIInfoBool m_allowHiddenFocus;
-  bool m_hasRendered;
+  bool m_hasProcessed;
   // enable/disable state
-  unsigned int m_enableCondition;
+  INFO::InfoPtr m_enableCondition;
   bool m_enabled;
 
   bool m_pushedUpdates;

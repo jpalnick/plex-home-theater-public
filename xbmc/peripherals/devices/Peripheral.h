@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -25,21 +25,31 @@
 
 class TiXmlDocument;
 
+class CSetting;
+
 namespace PERIPHERALS
 {
   class CGUIDialogPeripheralSettings;
+
+  typedef enum
+  {
+    STATE_SWITCH_TOGGLE,
+    STATE_ACTIVATE_SOURCE,
+    STATE_STANDBY
+  } CecStateChange;
 
   class CPeripheral
   {
     friend class CGUIDialogPeripheralSettings;
 
   public:
-    CPeripheral(const PeripheralType type, const PeripheralBusType busType, const CStdString &strLocation, const CStdString &strDeviceName, int iVendorId, int iProductId);
-    CPeripheral(void);
+    CPeripheral(const PeripheralScanResult& scanResult);
     virtual ~CPeripheral(void);
 
     bool operator ==(const CPeripheral &right) const;
     bool operator !=(const CPeripheral &right) const;
+    bool operator ==(const PeripheralScanResult& right) const;
+    bool operator !=(const PeripheralScanResult& right) const;
 
     const CStdString &FileLocation(void) const     { return m_strFileLocation; }
     const CStdString &Location(void) const         { return m_strLocation; }
@@ -107,7 +117,7 @@ namespace PERIPHERALS
      * @param strKey The key of the setting.
      * @param setting The setting.
      */
-    virtual void AddSetting(const CStdString &strKey, const CSetting *setting);
+    virtual void AddSetting(const CStdString &strKey, const CSetting *setting, int order);
 
     /*!
      * @brief Check whether a setting is known with the given key.
@@ -158,6 +168,7 @@ namespace PERIPHERALS
 
     PeripheralType                   m_type;
     PeripheralBusType                m_busType;
+    PeripheralBusType                m_mappedBusType;
     CStdString                       m_strLocation;
     CStdString                       m_strDeviceName;
     CStdString                       m_strSettingsFile;
@@ -172,7 +183,7 @@ namespace PERIPHERALS
     bool                             m_bError;
     std::vector<PeripheralFeature>   m_features;
     std::vector<CPeripheral *>       m_subDevices;
-    std::map<CStdString, CSetting *> m_settings;
+    std::map<CStdString, PeripheralDeviceSetting> m_settings;
     std::set<CStdString>             m_changedSettings;
   };
 }

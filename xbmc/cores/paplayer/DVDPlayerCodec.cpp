@@ -1,6 +1,6 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
- *      http://www.xbmc.org
+ *      Copyright (C) 2005-2013 Team XBMC
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,8 +26,9 @@
 #include "cores/dvdplayer/DVDDemuxers/DVDDemuxUtils.h"
 #include "cores/dvdplayer/DVDStreamInfo.h"
 #include "cores/dvdplayer/DVDCodecs/DVDFactoryCodec.h"
+#include "music/tags/TagLoaderTagLib.h"
 #include "utils/log.h"
-#include "settings/GUISettings.h"
+#include "settings/Settings.h"
 #include "URL.h"
 
 #include "AudioDecoder.h"
@@ -41,8 +42,10 @@ DVDPlayerCodec::DVDPlayerCodec()
   m_nAudioStream = -1;
   m_audioPos = 0;
   m_pPacket = NULL;
-  m_decoded = NULL;;
+  m_decoded = NULL;
   m_nDecodedLen = 0;
+  m_strFileName = "";
+  m_bInited = false;
 }
 
 DVDPlayerCodec::~DVDPlayerCodec()
@@ -57,14 +60,25 @@ void DVDPlayerCodec::SetContentType(const CStdString &strContent)
 
 bool DVDPlayerCodec::Init(const CStdString &strFile, unsigned int filecache)
 {
-  m_decoded = NULL;;
+  // take precaution if Init()ialized earlier
+  if (m_bInited)
+  {
+    // keep things as is if Init() was done with known strFile
+    if (m_strFileName == strFile)
+      return true;
+
+    // got differing filename, so cleanup before starting over
+    DeInit();
+  }
+
+  m_decoded = NULL;
   m_nDecodedLen = 0;
 
   CStdString strFileToOpen = strFile;
 
   CURL urlFile(strFile);
   if (urlFile.GetProtocol() == "shout" )
-    strFileToOpen.Replace("shout://","http://");
+    strFileToOpen.replace(0, 8, "http://");
 
   m_pInputStream = CDVDFactoryInputStream::CreateInputStream(NULL, strFileToOpen, m_strContentType);
   if (!m_pInputStream)
@@ -97,7 +111,7 @@ bool DVDPlayerCodec::Init(const CStdString &strFile, unsigned int filecache)
   }
   catch(...)
   {
-    CLog::Log(LOGERROR, "%s: Exception thrown when opeing demuxer", __FUNCTION__);
+    CLog::Log(LOGERROR, "%s: Exception thrown when opening demuxer", __FUNCTION__);
     if (m_pDemuxer)
     {
       delete m_pDemuxer;
@@ -132,8 +146,7 @@ bool DVDPlayerCodec::Init(const CStdString &strFile, unsigned int filecache)
 
   CDVDStreamInfo hint(*pStream, true);
 
-  bool passthrough = AUDIO_IS_BITSTREAM(g_guiSettings.GetInt("audiooutput.mode"));
-  m_pAudioCodec = CDVDFactoryCodec::CreateAudioCodec(hint, passthrough);
+  m_pAudioCodec = CDVDFactoryCodec::CreateAudioCodec(hint);
   if (!m_pAudioCodec)
   {
     CLog::Log(LOGERROR, "%s: Could not create audio codec", __FUNCTION__);
@@ -143,6 +156,18 @@ bool DVDPlayerCodec::Init(const CStdString &strFile, unsigned int filecache)
     m_pInputStream = NULL;
     return false;
   }
+
+  //  Extract ReplayGain info
+  // tagLoaderTagLib.Load will try to determine tag type by file extension, so set fallback by contentType
+  CStdString strFallbackFileExtension = "";
+  if (m_strContentType.Equals("audio/aacp") || m_strContentType.Equals("audio/aacp" "audio/aac"))
+    strFallbackFileExtension = "m4a";
+  else if (m_strContentType.Equals("audio/x-ms-wma"))
+    strFallbackFileExtension = "wma";
+  else if (m_strContentType.Equals("audio/x-ape") || m_strContentType.Equals("audio/ape"))
+    strFallbackFileExtension = "ape";
+  CTagLoaderTagLib tagLoaderTagLib;
+  tagLoaderTagLib.Load(strFile, m_tag, strFallbackFileExtension);
 
   // we have to decode initial data in order to get channels/samplerate
   // for sanity - we read no more than 10 packets
@@ -180,6 +205,9 @@ bool DVDPlayerCodec::Init(const CStdString &strFile, unsigned int filecache)
   m_Bitrate = m_pAudioCodec->GetBitRate();
   m_pDemuxer->GetStreamCodecName(m_nAudioStream,m_CodecName);
 
+  m_strFileName = strFile;
+  m_bInited = true;
+
   return true;
 }
 
@@ -207,9 +235,21 @@ void DVDPlayerCodec::DeInit()
     m_pAudioCodec = NULL;
   }
 
+  // cleanup format information
+  m_TotalTime = 0;
+  m_SampleRate = 0;
+  m_EncodedSampleRate = 0;
+  m_BitsPerSample = 0;
+  m_DataFormat = AE_FMT_INVALID;
+  m_Channels = 0;
+  m_Bitrate = 0;
+
   m_audioPos = 0;
-  m_decoded = NULL;;
+  m_decoded = NULL;
   m_nDecodedLen = 0;
+
+  m_strFileName = "";
+  m_bInited = false;
 }
 
 int64_t DVDPlayerCodec::Seek(int64_t iSeekTime)
@@ -221,7 +261,7 @@ int64_t DVDPlayerCodec::Seek(int64_t iSeekTime)
   m_pDemuxer->SeekTime((int)iSeekTime, false);
   m_pAudioCodec->Reset();
 
-  m_decoded = NULL;;
+  m_decoded = NULL;
   m_nDecodedLen = 0;
 
   return iSeekTime;

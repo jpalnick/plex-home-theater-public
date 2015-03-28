@@ -1,8 +1,8 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
- *      http://www.xbmc.org
+ *      Copyright (C) 2005-2013 Team XBMC
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 extern "C"
 {
 #include <libbluray/bluray.h>
+#include <libbluray/bluray-version.h>
 #include <libbluray/keys.h>
 #include <libbluray/overlay.h>
 }
@@ -47,7 +48,7 @@ public:
   virtual ~CDVDInputStreamBluray();
   virtual bool Open(const char* strFile, const std::string &content);
   virtual void Close();
-  virtual int Read(BYTE* buf, int buf_size);
+  virtual int Read(uint8_t* buf, int buf_size);
   virtual int64_t Seek(int64_t offset, int whence);
   virtual bool Pause(double dTime) { return false; };
   virtual bool IsEOF();
@@ -77,10 +78,15 @@ public:
   }
   virtual void OnNext()                  {}
   virtual void OnPrevious()              {}
+  virtual bool HasMenu();
   virtual bool IsInMenu();
   virtual bool OnMouseMove(const CPoint &point)  { return false; }
   virtual bool OnMouseClick(const CPoint &point) { return false; }
   virtual double GetTimeStampCorrection()        { return 0.0; }
+  virtual void SkipStill();
+  virtual bool GetState(std::string &xmlstate)         { return false; }
+  virtual bool SetState(const std::string &xmlstate)   { return false; }
+
 
   void UserInput(bd_vk_key_e vk);
 
@@ -96,18 +102,32 @@ public:
   void GetStreamInfo(int pid, char* language);
 
   void OverlayCallback(const BD_OVERLAY * const);
+#ifdef HAVE_LIBBLURAY_BDJ
+  void OverlayCallbackARGB(const struct bd_argb_overlay_s * const);
+#endif
 
   BLURAY_TITLE_INFO* GetTitleLongest();
   BLURAY_TITLE_INFO* GetTitleFile(const std::string& name);
 
+  void ProcessEvent();
+
 protected:
-  IDVDPlayer*   m_player;
-  DllLibbluray *m_dll;
-  BLURAY* m_bd;
-  BLURAY_TITLE_INFO* m_title;
-  bool               m_title_playing;
-  uint32_t           m_clip;
-  bool m_navmode;
+  struct SPlane;
+
+  void OverlayFlush(int64_t pts);
+  void OverlayClose();
+  static void OverlayClear(SPlane& plane, int x, int y, int w, int h);
+  static void OverlayInit (SPlane& plane, int w, int h);
+
+  IDVDPlayer*         m_player;
+  DllLibbluray*       m_dll;
+  BLURAY*             m_bd;
+  BLURAY_TITLE_INFO*  m_title;
+  uint32_t            m_playlist;
+  uint32_t            m_clip;
+  uint32_t            m_angle;
+  bool                m_menu;
+  bool                m_navmode;
 
   typedef boost::shared_ptr<CDVDOverlayImage> SOverlay;
   typedef std::list<SOverlay>                 SOverlays;
@@ -128,8 +148,12 @@ protected:
   enum EHoldState {
     HOLD_NONE = 0,
     HOLD_HELD,
-    HOLD_SKIP,
     HOLD_DATA,
+    HOLD_STILL,
+    HOLD_ERROR
   } m_hold;
   BD_EVENT m_event;
+#ifdef HAVE_LIBBLURAY_BDJ
+  struct bd_argb_buffer_s m_argb;
+#endif
 };

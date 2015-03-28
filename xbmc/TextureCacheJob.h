@@ -1,6 +1,6 @@
 /*
- *      Copyright (C) 2012 Team XBMC
- *      http://www.xbmc.org
+ *      Copyright (C) 2012-2013 Team XBMC
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@ public:
   CTextureCacheJob(const CStdString &url, const CStdString &oldHash = "");
   virtual ~CTextureCacheJob();
 
-  virtual const char* GetType() const { return "cacheimage"; };
+  virtual const char* GetType() const { return kJobTypeCacheImage; };
   virtual bool operator==(const CJob *job) const;
   virtual bool DoWork();
 
@@ -117,7 +117,7 @@ private:
    \param additional_info extra info for loading, such as whether to flip horizontally.
    \return a pointer to a CBaseTexture object, NULL if failed.
    */
-  static CBaseTexture *LoadImage(const CStdString &image, unsigned int width, unsigned int height, const std::string &additional_info);
+  static CBaseTexture *LoadImage(const CStdString &image, unsigned int width, unsigned int height, const std::string &additional_info, bool requirePixels = false);
 
   CStdString    m_cachePath;
 };
@@ -129,7 +129,7 @@ class CTextureDDSJob : public CJob
 public:
   CTextureDDSJob(const CStdString &original);
 
-  virtual const char* GetType() const { return "ddscompress"; };
+  virtual const char* GetType() const { return kJobTypeDDSCompress; };
   virtual bool operator==(const CJob *job) const;
   virtual bool DoWork();
 
